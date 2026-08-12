@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CineZen Admin</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header><div><b>CineZen Admin</b><span>Private Publisher</span></div><button id="logout" class="ghost hidden">Logout</button></header>
+
+<main>
+<section id="loginView" class="panel login">
+  <p class="eyebrow">PRIVATE ACCESS</p>
+  <h1>Admin Login</h1>
+  <p class="muted">Use the Firebase admin email and password you created.</p>
+  <form id="loginForm">
+    <input id="email" type="email" placeholder="Admin email" required>
+    <input id="password" type="password" placeholder="Password" required>
+    <button class="primary" type="submit">Login</button>
+  </form>
+  <p id="loginMsg" class="msg"></p>
+</section>
+
+<section id="appView" class="hidden">
+  <div class="panel">
+    <p class="eyebrow">PUBLISH MOVIE</p>
+    <h1>Search TMDB</h1>
+    <div class="searchRow">
+      <input id="movieSearch" type="search" placeholder="Movie name, e.g. Obsession">
+      <button id="searchBtn" class="primary">Search</button>
+    </div>
+    <p id="searchMsg" class="msg"></p>
+    <div id="results" class="grid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="rowBetween">
+      <div><p class="eyebrow">FIRESTORE</p><h2>Latest Movies</h2></div>
+      <span id="count" class="muted"></span>
+    </div>
+    <div id="published" class="grid"></div>
+    <p id="publishedEmpty" class="muted hidden">No published movies.</p>
+  </div>
+</section>
+</main>
+<script src="/admin.js"></script>
+</body>
+</html>
