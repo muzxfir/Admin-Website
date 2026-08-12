@@ -131,7 +131,7 @@ async function deleteRequest(docId){
 async function refreshRequests(){
   try{
     const list=await listRequests();
-    $('requestCount').textContent=list.length+' pending';
+    $('requestCount').textContent=list.length+' pending'; if($('statRequests')) $('statRequests').textContent=list.length;
     $('requestsEmpty').classList.toggle('hidden',list.length>0);
     $('requests').innerHTML=list.map(m=>`
       <article class="card">
@@ -170,7 +170,7 @@ async function refreshRequests(){
 async function refreshPublished(){
  try{
    const list=await listPublished();
-   $('count').textContent=list.length+' published';
+   $('count').textContent=list.length+' published'; if($('statPublished')) $('statPublished').textContent=list.length;
    $('publishedEmpty').classList.toggle('hidden',list.length>0);
    $('published').innerHTML=list.map(x=>card(x,true)).join('');
    $('published').querySelectorAll('button').forEach(b=>b.onclick=async()=>{if(confirm('Remove this movie from Now Available?')){await removeMovie(b.dataset.id);await refreshPublished();await refreshRequests();}});

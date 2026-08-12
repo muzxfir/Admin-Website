@@ -7,3 +7,4 @@
 .suggestion img{width:42px;height:58px;object-fit:cover;border-radius:7px;background:#171c28}
 .suggestion .stitle{font-weight:800;font-size:14px}
 .suggestion .smeta{font-size:12px;color:#9ca6b5;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}.stat{background:#101520;border:1px solid #252b39;border-radius:16px;padding:18px}.stat span{display:block;color:#9ca6b5;font-size:12px;margin-bottom:8px}.stat b{font-size:27px}.card .body button+button{margin-top:8px}@media(max-width:650px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}}
