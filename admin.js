@@ -1,4 +1,4 @@
-const FB={"apiKey": "AIzaSyA9xYUXl1HV7kpjWfIGWQiIPJh5KJX-Ir0", "authDomain": "cinezen-9088f.firebaseapp.com", "projectId": "cinezen-9088f", "storageBucket": "cinezen-9088f.firebasestorage.app", "messagingSenderId": "421006278615", "appId": "1:421006278615:web:ef177cc74e74585e665952"};
+const FB={"apiKey": "AIzaSyA9xYUXl1HV7kpjWfIGWQiIPJh5KJX-IrQ", "authDomain": "cinezen-9088f.firebaseapp.com", "projectId": "cinezen-9088f", "storageBucket": "cinezen-9088f.firebasestorage.app", "messagingSenderId": "421006278615", "appId": "1:421006278615:web:ef177cc74e74585e669592"};
 const ADMIN_UID="mFj8ohY5bKgenY5PneMCCHyyuox2";
 const IMG='https://image.tmdb.org/t/p/w500';
 const LS='cinezen_admin_session';
