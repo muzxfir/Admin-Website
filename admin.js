@@ -3,6 +3,8 @@ const ADMIN_UID="mFj8ohY5bKgenY5PneMCCHyyuox2";
 const IMG='https://image.tmdb.org/t/p/w500';
 const LS='cinezen_admin_session';
 let session=null;
+let suggestTimer;
+let suggestionResults=[];
 const $=id=>document.getElementById(id);
 
 function showApp(ok){
@@ -107,9 +109,88 @@ async function refreshPublished(){
  }catch(e){$('count').textContent=e.message}
 }
 
+
+function hideSuggestions(){
+  $('suggestions').classList.add('hidden');
+  $('suggestions').innerHTML='';
+}
+function renderSuggestions(list){
+  suggestionResults=list.slice(0,8);
+  const box=$('suggestions');
+  if(!suggestionResults.length){ hideSuggestions(); return; }
+  box.innerHTML=suggestionResults.map((m,i)=>{
+    const year=(m.release_date||'').slice(0,4)||'—';
+    const poster=m.poster_path?IMG+m.poster_path:'';
+    return `<div class="suggestion" data-index="${i}">
+      ${poster?`<img src="${poster}" alt="">`:`<div style="width:42px;height:58px;background:#171c28;border-radius:7px"></div>`}
+      <div><div class="stitle">${escapeHtml(m.title||m.original_title||'Untitled')}</div>
+      <div class="smeta">${year} • ${(m.original_language||'').toUpperCase()}</div></div>
+    </div>`;
+  }).join('');
+  box.classList.remove('hidden');
+  box.querySelectorAll('.suggestion').forEach(x=>x.onclick=()=>{
+    const m=suggestionResults[Number(x.dataset.index)];
+    $('movieSearch').value=m.title||m.original_title||'';
+    hideSuggestions();
+    showSearchResults([m]);
+  });
+}
+function showSearchResults(list){
+  $('results').innerHTML=list.slice(0,20).map(x=>card(x,false)).join('');
+  $('searchMsg').textContent=list.length?'Select the exact movie and publish it.':'No results';
+  $('results').querySelectorAll('button').forEach(b=>b.onclick=async()=>{
+    b.disabled=true;b.textContent='Publishing...';
+    try{
+      const m=list.find(x=>String(x.id)===String(b.dataset.id));
+      await publishMovie(m);
+      b.textContent='Published ✓';
+      await refreshPublished();
+    }catch(e){
+      b.disabled=false;
+      b.textContent='Publish / Now Available';
+      alert(e.message)
+    }
+  });
+}
+
 $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginMsg').textContent='Logging in...';try{await login($('email').value.trim(),$('password').value);showApp(true);$('loginMsg').textContent='';await refreshPublished();}catch(err){$('loginMsg').textContent=err.message}};
 $('logout').onclick=()=>{localStorage.removeItem(LS);session=null;showApp(false)};
-$('searchBtn').onclick=async()=>{const q=$('movieSearch').value.trim();if(!q)return;$('searchMsg').textContent='Searching...';try{const list=await searchTMDB(q);$('results').innerHTML=list.slice(0,20).map(x=>card(x,false)).join('');$('searchMsg').textContent=list.length?'Select the exact movie and publish it.':'No results';$('results').querySelectorAll('button').forEach(b=>b.onclick=async()=>{b.disabled=true;b.textContent='Publishing...';try{const m=list.find(x=>String(x.id)===String(b.dataset.id));await publishMovie(m);b.textContent='Published ✓';await refreshPublished();}catch(e){b.disabled=false;b.textContent='Publish / Now Available';alert(e.message)}});}catch(e){$('searchMsg').textContent=e.message}};
+$('searchBtn').onclick=async()=>{
+  const q=$('movieSearch').value.trim();
+  if(!q)return;
+  hideSuggestions();
+  $('searchMsg').textContent='Searching...';
+  try{
+    const list=await searchTMDB(q);
+    showSearchResults(list);
+  }catch(e){
+    $('searchMsg').textContent=e.message;
+  }
+};
+
+$('movieSearch').addEventListener('input',()=>{
+  clearTimeout(suggestTimer);
+  const q=$('movieSearch').value.trim();
+  if(q.length<2){hideSuggestions();return;}
+  suggestTimer=setTimeout(async()=>{
+    try{
+      const list=await searchTMDB(q);
+      renderSuggestions(list);
+    }catch(e){
+      hideSuggestions();
+    }
+  },300);
+});
+$('movieSearch').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    hideSuggestions();
+    $('searchBtn').click();
+  }
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.searchWrap')) hideSuggestions();
+});
 
 try{session=JSON.parse(localStorage.getItem(LS)||'null')}catch{session=null}
 if(session?.uid===ADMIN_UID){showApp(true);refreshPublished()}else{showApp(false)}

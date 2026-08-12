@@ -25,9 +25,12 @@
   <div class="panel">
     <p class="eyebrow">PUBLISH MOVIE</p>
     <h1>Search TMDB</h1>
-    <div class="searchRow">
-      <input id="movieSearch" type="search" placeholder="Movie name, e.g. Obsession">
-      <button id="searchBtn" class="primary">Search</button>
+    <div class="searchWrap">
+      <div class="searchRow">
+        <input id="movieSearch" type="search" placeholder="Type 2-3 letters, e.g. Obs..." autocomplete="off">
+        <button id="searchBtn" class="primary">Search</button>
+      </div>
+      <div id="suggestions" class="suggestions hidden"></div>
     </div>
     <p id="searchMsg" class="msg"></p>
     <div id="results" class="grid"></div>
