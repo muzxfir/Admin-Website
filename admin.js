@@ -83,9 +83,9 @@ async function publishMovie(m){
   const r=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json',...authHeader()},body:JSON.stringify({fields})});
   const x=await r.json(); if(!r.ok)throw new Error(x.error?.message||'Publish failed'); return x;
 }
-async function removeMovie(id){
+async function removeMovie(docId){
   await ensureSession();
-  const url=`https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/latest_movies/${id}?key=${FB.apiKey}`;
+  const url=`https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/latest_movies/${encodeURIComponent(docId)}?key=${FB.apiKey}`;
   const r=await fetch(url,{method:'DELETE',headers:authHeader()});
   if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error?.message||'Remove failed')}
 }
@@ -95,7 +95,7 @@ function card(m,published=false){
  const year=(m.release_date||'').slice(0,4)||m.year||'—';
  return `<article class="card"><div class="poster"><img src="${poster?IMG+poster:''}" alt=""></div><div class="body">
  <h3>${escapeHtml(m.title||'Untitled')}</h3><div class="meta">${year} • ${(m.original_language||m.language||'').toUpperCase()}</div>
- <button class="${published?'ghost remove':'primary'}" data-id="${m.id||m.tmdbId}">${published?'Remove':'Publish / Now Available'}</button></div></article>`;
+ <button class="${published?'ghost remove':'primary'}" data-id="${published ? (m.docId||m.tmdbId||m.id) : (m.id||m.tmdbId)}">${published?'Remove':'Publish / Now Available'}</button></div></article>`;
 }
 async function refreshPublished(){
  try{
