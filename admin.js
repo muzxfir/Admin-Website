@@ -99,13 +99,78 @@ function card(m,published=false){
  <h3>${escapeHtml(m.title||'Untitled')}</h3><div class="meta">${year} • ${(m.original_language||m.language||'').toUpperCase()}</div>
  <button class="${published?'ghost remove':'primary'}" data-id="${published ? (m.docId||m.tmdbId||m.id) : (m.id||m.tmdbId)}">${published?'Remove':'Publish / Now Available'}</button></div></article>`;
 }
+
+function parseRequestDoc(doc){
+  const f=doc.fields||{};
+  return {
+    docId:(doc.name||'').split('/').pop(),
+    tmdbId:Number(f.tmdbId?.integerValue||0),
+    title:f.title?.stringValue||'',
+    year:f.year?.stringValue||'',
+    posterPath:f.posterPath?.stringValue||'',
+    language:f.language?.stringValue||'',
+    requestedAt:f.requestedAt?.timestampValue||''
+  };
+}
+async function listRequests(){
+  const r=await fetch(fsUrl('movie_requests')+'&pageSize=100');
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error?.message||'Request list failed');
+  return (d.documents||[]).map(parseRequestDoc)
+    .sort((a,b)=>String(b.requestedAt).localeCompare(String(a.requestedAt)));
+}
+async function deleteRequest(docId){
+  await ensureSession();
+  const url=`https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/movie_requests/${encodeURIComponent(docId)}?key=${FB.apiKey}`;
+  const r=await fetch(url,{method:'DELETE',headers:authHeader()});
+  if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error?.message||'Delete request failed')}
+}
+async function refreshRequests(){
+  try{
+    const list=await listRequests();
+    $('requestCount').textContent=list.length+' pending';
+    $('requestsEmpty').classList.toggle('hidden',list.length>0);
+    $('requests').innerHTML=list.map(m=>`
+      <article class="card">
+        <div class="poster"><img src="${m.posterPath?IMG+m.posterPath:''}" alt=""></div>
+        <div class="body">
+          <h3>${escapeHtml(m.title||'Untitled')}</h3>
+          <div class="meta">${m.year||'—'} • ${(m.language||'').toUpperCase()}</div>
+          <button class="primary req-publish" data-id="${m.tmdbId}" data-doc="${m.docId}">Publish / Now Available</button>
+          <button class="ghost remove req-delete" data-doc="${m.docId}" style="margin-top:8px">Delete Request</button>
+        </div>
+      </article>`).join('');
+    $('requests').querySelectorAll('.req-publish').forEach(b=>b.onclick=async()=>{
+      b.disabled=true;b.textContent='Publishing...';
+      try{
+        await publishMovie({id:Number(b.dataset.id)});
+        await deleteRequest(b.dataset.doc);
+        await refreshPublished();await refreshRequests();
+        await refreshRequests();
+      }catch(e){
+        b.disabled=false;b.textContent='Publish / Now Available';
+        alert(e.message);
+      }
+    });
+    $('requests').querySelectorAll('.req-delete').forEach(b=>b.onclick=async()=>{
+      if(!confirm('Delete this request?')) return;
+      try{
+        await deleteRequest(b.dataset.doc);
+        await refreshRequests();
+      }catch(e){ alert(e.message); }
+    });
+  }catch(e){
+    $('requestCount').textContent=e.message;
+  }
+}
+
 async function refreshPublished(){
  try{
    const list=await listPublished();
    $('count').textContent=list.length+' published';
    $('publishedEmpty').classList.toggle('hidden',list.length>0);
    $('published').innerHTML=list.map(x=>card(x,true)).join('');
-   $('published').querySelectorAll('button').forEach(b=>b.onclick=async()=>{if(confirm('Remove this movie from Now Available?')){await removeMovie(b.dataset.id);await refreshPublished();}});
+   $('published').querySelectorAll('button').forEach(b=>b.onclick=async()=>{if(confirm('Remove this movie from Now Available?')){await removeMovie(b.dataset.id);await refreshPublished();await refreshRequests();}});
  }catch(e){$('count').textContent=e.message}
 }
 
@@ -144,7 +209,7 @@ function showSearchResults(list){
       const m=list.find(x=>String(x.id)===String(b.dataset.id));
       await publishMovie(m);
       b.textContent='Published ✓';
-      await refreshPublished();
+      await refreshPublished();await refreshRequests();
     }catch(e){
       b.disabled=false;
       b.textContent='Publish / Now Available';
@@ -153,7 +218,7 @@ function showSearchResults(list){
   });
 }
 
-$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginMsg').textContent='Logging in...';try{await login($('email').value.trim(),$('password').value);showApp(true);$('loginMsg').textContent='';await refreshPublished();}catch(err){$('loginMsg').textContent=err.message}};
+$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginMsg').textContent='Logging in...';try{await login($('email').value.trim(),$('password').value);showApp(true);$('loginMsg').textContent='';await refreshPublished();await refreshRequests();}catch(err){$('loginMsg').textContent=err.message}};
 $('logout').onclick=()=>{localStorage.removeItem(LS);session=null;showApp(false)};
 $('searchBtn').onclick=async()=>{
   const q=$('movieSearch').value.trim();
@@ -193,4 +258,4 @@ document.addEventListener('click',e=>{
 });
 
 try{session=JSON.parse(localStorage.getItem(LS)||'null')}catch{session=null}
-if(session?.uid===ADMIN_UID){showApp(true);refreshPublished()}else{showApp(false)}
+if(session?.uid===ADMIN_UID){showApp(true);refreshPublished();refreshRequests()}else{showApp(false)}
