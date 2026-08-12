@@ -113,7 +113,10 @@ function parseRequestDoc(doc){
   };
 }
 async function listRequests(){
-  const r=await fetch(fsUrl('movie_requests')+'&pageSize=100');
+  await ensureSession();
+  const r=await fetch(fsUrl('movie_requests')+'&pageSize=100', {
+    headers: authHeader()
+  });
   const d=await r.json();
   if(!r.ok) throw new Error(d.error?.message||'Request list failed');
   return (d.documents||[]).map(parseRequestDoc)
@@ -145,7 +148,7 @@ async function refreshRequests(){
       try{
         await publishMovie({id:Number(b.dataset.id)});
         await deleteRequest(b.dataset.doc);
-        await refreshPublished();await refreshRequests();
+        await refreshPublished();
         await refreshRequests();
       }catch(e){
         b.disabled=false;b.textContent='Publish / Now Available';
